@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 #include <sys/types.h>
+#include <linux/msm_audio.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -35,14 +36,13 @@ namespace android {
 
 // ----------------------------------------------------------------------------
 
-static char const * const kAudioDeviceName = "/dev/eac";
-
 // ----------------------------------------------------------------------------
 
 AudioHardwareVogue::AudioHardwareVogue()
-    : mOutput(0), mInput(0),  mFd(-1), mMicMute(false)
+    : mOutput(0), mInput(0),  mFd(-1), mFdIn(-1), mMicMute(false)
 {
-    mFd = ::open(kAudioDeviceName, O_RDWR);
+    mFd = ::open("/dev/msm_pcm_out", O_RDWR);
+    mFdIn = ::open("/dev/msm_pcm_in", O_RDWR);
 }
 
 AudioHardwareVogue::~AudioHardwareVogue()
@@ -55,7 +55,11 @@ AudioHardwareVogue::~AudioHardwareVogue()
 status_t AudioHardwareVogue::initCheck()
 {
     if (mFd >= 0) {
-        if (::access(kAudioDeviceName, O_RDWR) == NO_ERROR)
+        if (::access("/dev/msm_pcm_out", O_RDWR) == NO_ERROR)
+            return NO_ERROR;
+    }
+    if (mFdIn >= 0) {
+        if (::access("/dev/msm_pcm_in", O_RDWR) == NO_ERROR)
             return NO_ERROR;
     }
     return NO_INIT;
@@ -108,7 +112,7 @@ AudioStreamIn* AudioHardwareVogue::openInputStream(
 
     // create new output stream
     AudioStreamInVogue* in = new AudioStreamInVogue();
-    status_t lStatus = in->set(this, mFd, format, channelCount, sampleRate, acoustics);
+    status_t lStatus = in->set(this, mFdIn, format, channelCount, sampleRate, acoustics);
     if (status) {
         *status = lStatus;
     }
@@ -126,7 +130,12 @@ void AudioHardwareVogue::closeInputStream(AudioStreamInVogue* in) {
 
 status_t AudioHardwareVogue::setVoiceVolume(float v)
 {
-    // Implement: set voice volume
+    unsigned scaled_vol = v * (float)0x3000;
+    int rc;
+
+    rc = ioctl(mFd, AUDIO_SET_VOLUME, scaled_vol);
+    if (rc < 0)
+        return UNKNOWN_ERROR;
     return NO_ERROR;
 }
 

@@ -131,6 +131,7 @@ private:
     AudioStreamOutVogue   *mOutput;
     AudioStreamInVogue    *mInput;
     int                     mFd;
+    int                     mFdIn;
     bool                    mMicMute;
 };
 
