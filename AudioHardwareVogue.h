@@ -72,8 +72,8 @@ public:
             uint32_t sampleRate,
             AudioSystem::audio_in_acoustics acoustics);
 
-    uint32_t    sampleRate() const { return 8000; }
-    virtual size_t      bufferSize() const { return 320; }
+    uint32_t    sampleRate() const { return 11025; }
+    virtual size_t      bufferSize() const { return 1024; }
     virtual int         channelCount() const { return 1; }
     virtual int         format() const { return AudioSystem::PCM_16_BIT; }
     virtual status_t    setGain(float gain) { return INVALID_OPERATION; }
@@ -103,6 +103,8 @@ public:
 
     virtual status_t    setParameter(const char* key, const char* value)
             { return NO_ERROR; }
+
+    virtual size_t      getInputBufferSize(uint32_t rate, int format, int chan);
 
     // create I/O streams
     virtual AudioStreamOut* openOutputStream(

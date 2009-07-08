@@ -48,6 +48,7 @@ AudioHardwareVogue::AudioHardwareVogue()
 AudioHardwareVogue::~AudioHardwareVogue()
 {
     if (mFd >= 0) ::close(mFd);
+    if (mFdIn >= 0) ::close(mFdIn);
     delete mOutput;
     delete mInput;
 }
@@ -156,6 +157,25 @@ status_t AudioHardwareVogue::getMicMute(bool* state)
 {
     *state = mMicMute;
     return NO_ERROR;
+}
+
+size_t AudioHardwareVogue::getInputBufferSize(uint32_t rate, 
+        int format, int chan)
+{
+    unsigned bytes_per_sample = 1;
+
+    switch (format) {
+        case AudioSystem::PCM_8_BIT:
+            bytes_per_sample *= 1;
+            break;
+
+        case AudioSystem::PCM_16_BIT:
+        case AudioSystem::FORMAT_DEFAULT:
+            bytes_per_sample *= 2;
+            break;
+    }
+
+    return 2048 / bytes_per_sample;
 }
 
 status_t AudioHardwareVogue::dumpInternals(int fd, const Vector<String16>& args)
@@ -315,6 +335,11 @@ status_t AudioStreamInVogue::dump(int fd, const Vector<String16>& args)
     result.append(buffer);
     ::write(fd, result.string(), result.size());
     return NO_ERROR;
+}
+
+AudioHardwareInterface *createAudioHardware()
+{
+    return new AudioHardwareVogue();
 }
 
 // ----------------------------------------------------------------------------
